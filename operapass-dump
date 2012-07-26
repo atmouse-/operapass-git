@@ -1,0 +1,29 @@
+#!/usr/bin/env python2
+#
+# Marin Tournoij <martin@arp242>
+# Free for any use, there are no restrictions
+#
+# This just "dumps" the data to the standard output
+#
+# TODO: Make this a more generic export utilty, exporting to files other
+# programs can import (i.e. CSV and the like).
+#
+
+import sys
+
+from operapass import operapass
+
+if __name__ == '__main__':
+	pwfile = operapass.GetPasswordfile()
+	passwords = operapass.GetPasswordsDict(pwfile)
+
+	for p in passwords:
+		print '-' * 70
+		print p['url']
+		for k, v in p['fields'].iteritems():
+			print '\t%s: %s' % (k, v)
+		print '-' * 70
+		print ''
+
+	print ''
+	print 'Total of %s passwords' % len(passwords)
