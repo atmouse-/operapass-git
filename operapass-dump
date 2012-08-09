@@ -8,22 +8,22 @@
 # TODO: Make this a more generic export utilty, exporting to files other
 # programs can import (i.e. CSV and the like).
 #
+# Usage: $0 [FILE]
 
 import sys
 
 from operapass import operapass
 
 if __name__ == '__main__':
-	pwfile = operapass.GetPasswordfile()
-	passwords = operapass.GetPasswordsDict(pwfile)
+    pwfile = operapass.GetPasswordfile()
+    passwords = operapass.GetPasswordsDict(pwfile)
 
-	for p in passwords:
-		print '-' * 70
-		print p['url']
-		for k, v in p['fields'].iteritems():
-			print '\t%s: %s' % (k, v)
-		print '-' * 70
-		print ''
+    for p in passwords:
+        print '*' * 75
+        print p['url']
+        print p['time']
+        for k, v in p['fields'].iteritems():
+            print '\t%s: %s' % (k, v)
 
-	print ''
-	print 'Total of %s passwords' % len(passwords)
+    print ''
+    print 'Total of %s passwords' % len(passwords)
