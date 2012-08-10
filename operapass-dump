@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #
 # Marin Tournoij <martin@arp242>
+# atmouse <github.com/atmouse->
 # Free for any use, there are no restrictions
 #
 # This just "dumps" the data to the standard output
