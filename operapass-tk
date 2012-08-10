@@ -11,53 +11,52 @@
 import sys
 
 try:
-	import Tkinter as tk
+    import Tkinter as tk
 except ImportError:
-	print "TKinter is required, but wasn't found."
-	print 'You can always use operapass-dump from the terminal.'
-	sys.exit(1)
+    print "TKinter is required, but wasn't found."
+    print 'You can always use operapass-dump from the terminal.'
+    sys.exit(1)
 
 from operapass import operapass
 
 def Lambda(f, *args, **kwds):
-	return lambda event, f=f, args=args, kwds=kwds : f(*args, **kwds)
+    return lambda event, f=f, args=args, kwds=kwds : f(*args, **kwds)
 
 def TkPager(root, output):
-	root.wm_title('operapass 1.0 -- Press ESC to exit.')
-	root.geometry('800x460')
-	root.bind('<Escape>', Lambda(root.quit))
+    root.wm_title('operapass 1.0 -- Press ESC to exit.')
+    root.geometry('800x460')
+    root.bind('<Escape>', Lambda(root.quit))
 
-	pagerFrame = tk.Frame(root)
-	pagerFrame.pack(side=tk.BOTTOM, expand=tk.YES, fill=tk.BOTH)
+    pagerFrame = tk.Frame(root)
+    pagerFrame.pack(side=tk.BOTTOM, expand=tk.YES, fill=tk.BOTH)
 
-	scrollbar = tk.Scrollbar(pagerFrame)
-	scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    scrollbar = tk.Scrollbar(pagerFrame)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-	pager = tk.Text(pagerFrame, borderwidth=5, yscrollcommand=scrollbar.set)
-	pager.pack(side=tk.BOTTOM, expand=tk.YES, fill=tk.BOTH)
-	pager.insert(tk.INSERT, output)
-	#pager.see(tk.END)
-	pager.config(state=tk.DISABLED)
-	pager.focus_force()
+    pager = tk.Text(pagerFrame, borderwidth=5, yscrollcommand=scrollbar.set)
+    pager.pack(side=tk.BOTTOM, expand=tk.YES, fill=tk.BOTH)
+    pager.insert(tk.INSERT, output)
+    #pager.see(tk.END)
+    pager.config(state=tk.DISABLED)
+    pager.focus_force()
 
-	scrollbar.config(command=pager.yview)
+    scrollbar.config(command=pager.yview)
 
-	return (root)
+    return (root)
 
 if __name__ == '__main__':
-	pwfile = operapass.GetPasswordfile()
-	passwords = operapass.GetPasswordsDict(pwfile)
+    pwfile = operapass.GetPasswordfile()
+    passwords = operapass.GetPasswordsDict(pwfile)
 
-	info = 'Total of %s passwords\n\n' % len(passwords)
-	for p in passwords:
-		info += '-' * 70
-		info += '\n'
-		info += p['url'] + '\n'
-		for k, v in p['fields'].iteritems():
-			info += '\t%s: %s\n' % (k, v)
-		info += '-' * 70
-		info += '\n\n'
+    info = 'Total of %s passwords\n\n' % len(passwords)
+    for p in passwords:
+        info += '*' * 75 + '\n'
+        info += p['url'] + '\n'
+        info += p['time'] + '\n'
+        for k, v in p['fields'].iteritems():
+            info += '\t%s: %s\n' % (k, v)
+        info += '\n'
 
-	root = tk.Tk()
-	root = TkPager(root, info)
-	root.mainloop()
+    root = tk.Tk()
+    root = TkPager(root, info)
+    root.mainloop()

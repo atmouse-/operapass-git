@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #
-# Marin Tournoij <martin@arp242>
+# Marin Tournoij <martin@arp242> 
+# atmouse <github.com/atmouse->
+#
 # Free for any use, there are no restrictions
 #
 # This is, in part, based on the information found here:
@@ -165,6 +167,9 @@ def GetPasswords(pwfile):
         }
     
     """
+    # Bug here, I can't find a new to parse the format of the data 
+    # list, It must read from the bin data ,then the hex flag will 
+    # be the fixed way. --atmouse
     data = GetData(pwfile)
 
     rows = []
@@ -214,55 +219,6 @@ def GetPasswords(pwfile):
                 pos=1
             row["key"]=data
 
-        
-        #flag=0
-        #pprofile={"id":'',
-            #"time":'',
-            #"url":'',
-            #"type":'',
-            #"domain":'',
-            #"field":''
-            #}
-        #if DecryptBlock(key, d)=="Personal profile":
-            #flag=flag+1
-            #pprofile.
-        #if block=="Log profile":nlflag=0
-        #if nlflag>0:break
-        ## A new "row" is indicated by a timestamp
-        #try:
-            #dt = datetime.datetime(1970, 1, 1)
-            #dt.strptime(block, '%Y-%m-%dT%H:%M:%SZ')
-        #except ValueError:
-            #dt = None
-
-        #if dt:
-            #if len(row) > 2:
-                #if len(row) % 2 == 0:
-                    #del row[1]
-                #rows.append(row)
-            #row = []
-        #else:
-            #if block[:5] == '*http':
-                #http = True
-            #else:
-                #http = False
-            
-            ##if len(row) >= 1 and block.startswith("http"):
-            #if len(row) >= 1 and block[:4] == 'http' or block[:5] == '*http':
-                #if http:
-                    #row.append(block[1:])
-                    #row.append('HTTP Authentication')
-                    #row.append('True')
-            #else:
-                #row.append(block)
-
-    #if len(row) % 2 == 0:
-        #del row[1]
-    #rows.append(row)
-
-    #rows = rows[1:]
-    #rows = sorted(rows, key=lambda r: r[0])
-    
     return rows
 
 def GetPasswordsDict(pwfile):
@@ -286,6 +242,7 @@ def GetPasswordsDict(pwfile):
         if len(pw["field"]) %2==0:
             data=pw["field"]
         else:
+            dictrow["fields"]["unknow"]=pw['field'][0]
             data=pw["field"][1:]
         i=0
         for col in data:
@@ -294,20 +251,6 @@ def GetPasswordsDict(pwfile):
             else:
                 dictrow["fields"][key]=col
             i+=1
-
-                    
-        #for i,data in enumerate(reverse(row["field"])):
-            #if i%2==1:
-                #key=data
-            #else:
-                #dictrow["fields"][key]=data
-        #i = 0
-        #for col in row[1:]:
-            #if i % 2 == 0:
-                #key = col
-            #else:
-                #dictrow['fields'][key] = col
-            #i += 1
 
         ret.append(dictrow)
     return ret
