@@ -171,7 +171,6 @@ def GetPasswords(pwfile):
     # list, It must read from the bin data ,then the hex flag will 
     # be the fixed way. --atmouse
     data = GetData(pwfile)
-
     rows = []
     key = None
 
@@ -182,6 +181,7 @@ def GetPasswords(pwfile):
         # Strip non-printable characters
         # XXX This also strips non-ASCII characters
         block = GetPrintable(block)
+        print block
         if pflag==0:
             if block=="Log profile":pflag=1
         else:
