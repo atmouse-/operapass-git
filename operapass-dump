@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
 #
-# Marin Tournoij <martin@arp242>
-# atmouse <github.com/atmouse->
 # Free for any use, there are no restrictions
 #
 # This just "dumps" the data to the standard output
@@ -11,20 +9,15 @@
 #
 # Usage: $0 [FILE]
 
+from __future__ import print_function 
+
 import sys
+from operapass import opwand
 
-from operapass import operapass
-
-if __name__ == '__main__':
-    pwfile = operapass.GetPasswordfile()
-    passwords = operapass.GetPasswordsDict(pwfile)
-
-    for p in passwords:
-        print '*' * 75
-        print p['url']
-        print p['time']
-        for k, v in p['fields'].iteritems():
-            print '\t%s: %s' % (k, v)
-
-    print ''
-    print 'Total of %s passwords' % len(passwords)
+if __name__ == "__main__":
+    pwfile = opwand.GetPasswordfile()
+    passwords=opwand.getData(pwfile)
+    opwand.PrintTextData(passwords)
+    
+    print("total of",len(passwords),"password areas")
+    print("wand.dat file:",pwfile)
