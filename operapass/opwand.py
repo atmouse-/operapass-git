@@ -86,18 +86,19 @@ def getBlockData(fp,length):
     #print("length:",length,fp.tell())
     block=pwRawData()
     block.size=length
-    #print("block_size:pos:",fp.tell())
+    print("block_size:",block.size,"pos:",fp.tell())
     
     #if block.size==0:
         #if typeBlock==2:n=fp.read(4);print(fp.tell(),"typeBlock"," 00 00 00 00 00 00 00 00");return "\x00\x00\x00\x00\x00\x00\x00\x00"
         #if typeBlock==1:print(fp.tell(),"typeBlock"," 00 00 00 00");return "\x00\x00\x00\x00"
     #print("read pos:",fp.tell())
     size_key=int("%d"%struct.unpack('>I',fp.read(4)))
+    print("size_key",size_key,"pos:",fp.tell())
     #if size_key==0:print("pos:",fp.tell(),"error")
     block.key=struct.unpack('>%ss' % size_key, fp.read(size_key))[0]
     size_data=int("%d"%struct.unpack('>I',fp.read(4)))
     block.data=struct.unpack('>%ss' % size_data, fp.read(size_data))[0]
-    #print(length,size_key,size_data,GetPrintable(DecryptBlock(block.key,block.data)))
+    print(length,size_key,size_data,GetPrintable(DecryptBlock(block.key,block.data)))
     #print("end pos:::::",fp.tell())
     return block
         
@@ -126,66 +127,73 @@ def getData(filepath):
                     #print("fstruct error,pos",fp.tell(),hex(fstruct))
                     #fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
                 while fstruct != 88:
+                    print(">> parse pass",fstruct)
                     ## the start of area flag is "\x58"
                     ##print("fstruct error,pos",fp.tell(),hex(fstruct))
                     fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
+                
+                domain_info_count=1
+                max_count=6
+                spec=0
+                #print("start")
+                
+                l=fstruct
+                pd.key=getBlockData(fp,l)
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.timestamp=getBlockData(fp,l)
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.onurl=getBlockData(fp,l)
+                
+                before=fp.tell()
+                print(">>","other domain info")
+                while 1:
+                    l=int("%d"%struct.unpack('>I',fp.read(4)))
+                    print(l)
+                    if l==2 :break
+                    if l==0 :continue
+                    if l>0 and l<8:
+                        n=fp.read(16)
+                        #print("ord(2)",l,"pass",fp.tell())
+                        continue
+                    if l>=255 and l<65535:
+                        #print("ord(l)",l,"break",fp.tell())
+                        break
+                    if l>=65535 :n=fp.read(4);continue
+                    #if l<8 and l>3:max_count-=1;continue
+                    #elif l==1 or l==2 or l==3 or l>=32767:print("ord(l)",l,"break",fp.tell());break
+                    if l>=8 and l<255 :
+                        pd.other.append(getBlockData(fp,l))
+                
+                ## if 00 00 00 02 , it is a new block
+                if l==2:continue
+                
+                #pd.fldsinfo_len=24
+                #print("len pd.other len pd.other len pd.other:",len(pd.other))
 
+                pd.flds_count=int("%d"%struct.unpack('>I',fp.read(4)))
+                #print("pd.flds_count",pd.flds_count,fp.tell(),"read fileds........................",fp.tell())
+                print(">> with",pd.flds_count,"fields")
+                for i in xrange(pd.flds_count):
+                    tag_id=fp.read(1)
+                    #print("tag_id",ord(tag_id))
+                    d=[]
+                    for j in xrange(3):
+                        ## each tag_id with 3 block, including an empty block
+                        l=int("%d"%struct.unpack('>I',fp.read(4)))
+                        if l<9 :
+                            #print("ord(l)",l,fp.tell())
+                            continue
+                        d.append(getBlockData(fp,l))
+                        #print("append data:",str(i)*3)
+                    pd.flds.append((tag_id,d[:]))
+                ret.append(pd)
+                #print("end")
+                print('*'*50)
+                #print("stack here****",fp.tell())
             except:
                 #print("except,pos:",fp.tell())
                 break
 
-            domain_info_count=1
-            max_count=6
-            spec=0
-            #print("start")
-            
-            l=fstruct
-            pd.key=getBlockData(fp,l)
-            l=int("%d"%struct.unpack('>I',fp.read(4)))
-            pd.timestamp=getBlockData(fp,l)
-            l=int("%d"%struct.unpack('>I',fp.read(4)))
-            pd.onurl=getBlockData(fp,l)
-
-            before=fp.tell()
-            while 1:
-                l=int("%d"%struct.unpack('>I',fp.read(4)))
-                
-                if l==0 :continue
-                if l>0 and l<8:
-                    n=fp.read(16)
-                    #print("ord(2)",l,"pass",fp.tell())
-                    continue
-                if l>=255 and l<65535:
-                    #print("ord(l)",l,"break",fp.tell())
-                    break
-                if l>=65535 :n=fp.read(4);continue
-                #if l<8 and l>3:max_count-=1;continue
-                #elif l==1 or l==2 or l==3 or l>=32767:print("ord(l)",l,"break",fp.tell());break
-                if l>=8 and l<255 :
-                    pd.other.append(getBlockData(fp,l))
-
-            #pd.fldsinfo_len=24
-            #print("len pd.other len pd.other len pd.other:",len(pd.other))
-
-            pd.flds_count=int("%d"%struct.unpack('>I',fp.read(4)))
-            #print("pd.flds_count",pd.flds_count,fp.tell(),"read fileds........................",fp.tell())
-            for i in xrange(pd.flds_count):
-                tag_id=fp.read(1)
-                #print("tag_id",ord(tag_id))
-                d=[]
-                for j in xrange(3):
-                    ## each tag_id with 3 block, including an empty block
-                    l=int("%d"%struct.unpack('>I',fp.read(4)))
-                    if l<9 :
-                        #print("ord(l)",l,fp.tell())
-                        continue
-                    d.append(getBlockData(fp,l))
-                    #print("append data:",str(i)*3)
-                pd.flds.append((tag_id,d[:]))
-            ret.append(pd)
-            #print("end")
-            #print('*'*50)
-            #print("stack here****",fp.tell())
     #print("len ret:",len(ret))
     
     if ret:
