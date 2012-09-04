@@ -148,8 +148,8 @@ def getData(filepath):
                 print(">>","other domain info")
                 while 1:
                     l=int("%d"%struct.unpack('>I',fp.read(4)))
-                    print(l)
-                    if l==2 :break
+                    print("other domain parse:",l)
+#                    if l==2 :break
                     if l==0 :continue
                     if l>0 and l<8:
                         n=fp.read(16)
@@ -165,7 +165,7 @@ def getData(filepath):
                         pd.other.append(getBlockData(fp,l))
                 
                 ## if 00 00 00 02 , it is a new block
-                if l==2:continue
+#                if l==2:continue
                 
                 #pd.fldsinfo_len=24
                 #print("len pd.other len pd.other len pd.other:",len(pd.other))
