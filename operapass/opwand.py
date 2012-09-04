@@ -114,6 +114,7 @@ def getData(filepath):
         if not start_pos:print("wrong file!");sys.exit()
         fp.seek(start_pos+4+48+1)
         pw_total=int("%d"%struct.unpack('>I',fp.read(4)))
+        print("total",pw_total,"passwords")
         while 1:
             pd=pwTextData()
             try:
@@ -128,7 +129,7 @@ def getData(filepath):
                 #while fstruct not in [2,1,3]:
                     #print("fstruct error,pos",fp.tell(),hex(fstruct))
                     #fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
-                while fstruct<=24 or fstruct>=255 :
+                while fstruct<=24 or fstruct>=256 :
                     print(">> head parse pass",fstruct)
                     ## the start of area flag is "\x58"
                     ##print("fstruct error,pos",fp.tell(),hex(fstruct))
@@ -159,17 +160,16 @@ def getData(filepath):
                     print("other domain parse:",l)
 #                    if l==2 :break
                     if l==0 :continue
-                    if l>0 and l<24:
+                    if (l>0 and l<24) or l>=65535:
                         n=fp.read(20)
                         #print("ord(2)",l,"pass",fp.tell())
                         break
-                    if l>=255 and l<65535:
+                    if l>=512 and l<65535:
                         #print("ord(l)",l,"break",fp.tell())
                         break
-                    if l>=65535 :n=fp.read(4);continue
                     #if l<8 and l>3:max_count-=1;continue
                     #elif l==1 or l==2 or l==3 or l>=32767:print("ord(l)",l,"break",fp.tell());break
-                    if l>=24 and l<255 :
+                    if l>=24 and l<512 :
                         pd.other.append(getBlockData(fp,l))
                 
                 ## if 00 00 00 02 , it is a new block
