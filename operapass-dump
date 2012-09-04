@@ -9,7 +9,7 @@
 #
 # Usage: $0 [FILE]
 
-from __future__ import print_function 
+from __future__ import print_function
 
 import sys
 from operapass import opwand
@@ -18,6 +18,6 @@ if __name__ == "__main__":
     pwfile = opwand.GetPasswordfile()
     passwords=opwand.getData(pwfile)
     opwand.PrintTextData(passwords)
-    
+
     print("total of",len(passwords),"password areas")
     print("wand.dat file:",pwfile)
