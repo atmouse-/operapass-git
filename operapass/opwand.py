@@ -126,7 +126,7 @@ def getData(filepath):
                 #while fstruct not in [2,1,3]:
                     #print("fstruct error,pos",fp.tell(),hex(fstruct))
                     #fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
-                while fstruct != 88:
+                while fstruct != 88 and fstruct !=64:
                     print(">> parse pass",fstruct)
                     ## the start of area flag is "\x58"
                     ##print("fstruct error,pos",fp.tell(),hex(fstruct))
