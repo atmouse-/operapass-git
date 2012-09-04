@@ -93,10 +93,12 @@ def getBlockData(fp,length):
         #if typeBlock==1:print(fp.tell(),"typeBlock"," 00 00 00 00");return "\x00\x00\x00\x00"
     #print("read pos:",fp.tell())
     size_key=int("%d"%struct.unpack('>I',fp.read(4)))
-    print("size_key",size_key,"pos:",fp.tell())
+    if size_key!=8 :
+        print("!!!!warnings,size_key",size_key,"pos:",fp.tell())
     #if size_key==0:print("pos:",fp.tell(),"error")
     block.key=struct.unpack('>%ss' % size_key, fp.read(size_key))[0]
     size_data=int("%d"%struct.unpack('>I',fp.read(4)))
+    print("size_data",size_data,"pos:",fp.tell())
     block.data=struct.unpack('>%ss' % size_data, fp.read(size_data))[0]
     print(length,size_key,size_data,GetPrintable(DecryptBlock(block.key,block.data)))
     #print("end pos:::::",fp.tell())
@@ -111,7 +113,7 @@ def getData(filepath):
         start_pos=fp.read().find("\x00\x00\x00\x30\x00\x00\x00\x08\x93\x58\x8F\xF7\xAD\xA9\x24\xA1\x00\x00\x00\x20\x49\x6B\x89\x36\x17\x8B\x97\x80\x44\x61\x73\xE2\x59\x65\xCD\x20\x3F\x40\xAC\x95\xE9\x3C\xBA\x4E\xF0\x89\xFD\x0A\x0C\x57\x7F\xB6")
         if not start_pos:print("wrong file!");sys.exit()
         fp.seek(start_pos+4+48+1)
-        
+        pw_total=int("%d"%struct.unpack('>I',fp.read(4)))
         while 1:
             pd=pwTextData()
             try:
@@ -126,24 +128,30 @@ def getData(filepath):
                 #while fstruct not in [2,1,3]:
                     #print("fstruct error,pos",fp.tell(),hex(fstruct))
                     #fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
-                while fstruct != 88 and fstruct !=64:
-                    print(">> parse pass",fstruct)
+                while fstruct<=24 or fstruct>=255 :
+                    print(">> head parse pass",fstruct)
                     ## the start of area flag is "\x58"
                     ##print("fstruct error,pos",fp.tell(),hex(fstruct))
                     fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
-                
+
                 domain_info_count=1
                 max_count=6
                 spec=0
                 #print("start")
-                
+
                 l=fstruct
                 pd.key=getBlockData(fp,l)
-                l=int("%d"%struct.unpack('>I',fp.read(4)))
-                pd.timestamp=getBlockData(fp,l)
-                l=int("%d"%struct.unpack('>I',fp.read(4)))
-                pd.onurl=getBlockData(fp,l)
                 
+                #l=int("%d"%struct.unpack('>I',fp.read(4)))
+                #while l<=24 or l>=255:
+                #    l=int("%d"%struct.unpack('>I',fp.read(4)))
+                #pd.timestamp=getBlockData(fp,l)
+                
+                #l=int("%d"%struct.unpack('>I',fp.read(4)))
+                #while l<=24 or l>=255:
+                #    l=int("%d"%struct.unpack('>I',fp.read(4)))
+                #pd.onurl=getBlockData(fp,l)
+
                 before=fp.tell()
                 print(">>","other domain info")
                 while 1:
@@ -151,22 +159,21 @@ def getData(filepath):
                     print("other domain parse:",l)
 #                    if l==2 :break
                     if l==0 :continue
-                    if l>0 and l<8:
-                        n=fp.read(16)
+                    if l>0 and l<24:
+                        n=fp.read(20)
                         #print("ord(2)",l,"pass",fp.tell())
-                        continue
+                        break
                     if l>=255 and l<65535:
                         #print("ord(l)",l,"break",fp.tell())
                         break
                     if l>=65535 :n=fp.read(4);continue
                     #if l<8 and l>3:max_count-=1;continue
                     #elif l==1 or l==2 or l==3 or l>=32767:print("ord(l)",l,"break",fp.tell());break
-                    if l>=8 and l<255 :
+                    if l>=24 and l<255 :
                         pd.other.append(getBlockData(fp,l))
                 
                 ## if 00 00 00 02 , it is a new block
 #                if l==2:continue
-                
                 #pd.fldsinfo_len=24
                 #print("len pd.other len pd.other len pd.other:",len(pd.other))
 
@@ -191,7 +198,7 @@ def getData(filepath):
                 print('*'*50)
                 #print("stack here****",fp.tell())
             except:
-                #print("except,pos:",fp.tell())
+                print("except,pos:",fp.tell())
                 break
 
     #print("len ret:",len(ret))
