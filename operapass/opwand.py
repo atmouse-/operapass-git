@@ -2,7 +2,9 @@
 
 
 from __future__ import print_function 
-import sys,os,platform
+import sys
+import os
+import platform
 import struct
 import hashlib
 
@@ -32,8 +34,9 @@ class pwTextData():
         self.key=""
         self.timestamp=""
         self.onurl=""
-        self.unknow_url="" #unuse
-        self.domain="" #unuse
+        self.action="" 
+        self.unknow_url2="" # unuse
+        self.domain=""
         self.other=[] # other urlinfo,didn't decrypto
         self.other2=[] # other urlinfo text 
     
@@ -82,20 +85,15 @@ def GetPrintable(text):
     return ''.join([ b for b in text if b in printable ])
 
 def getBlockData(fp,length):
-    
+    if length==0:
+        return None
     #print("length:",length,fp.tell())
     block=pwRawData()
     block.size=length
     print("block_size:",block.size,"pos:",fp.tell())
-    
-    #if block.size==0:
-        #if typeBlock==2:n=fp.read(4);print(fp.tell(),"typeBlock"," 00 00 00 00 00 00 00 00");return "\x00\x00\x00\x00\x00\x00\x00\x00"
-        #if typeBlock==1:print(fp.tell(),"typeBlock"," 00 00 00 00");return "\x00\x00\x00\x00"
-    #print("read pos:",fp.tell())
     size_key=int("%d"%struct.unpack('>I',fp.read(4)))
     if size_key!=8 :
         print("!!!!warnings,size_key",size_key,"pos:",fp.tell())
-    #if size_key==0:print("pos:",fp.tell(),"error")
     block.key=struct.unpack('>%ss' % size_key, fp.read(size_key))[0]
     size_data=int("%d"%struct.unpack('>I',fp.read(4)))
     print("size_data",size_data,"pos:",fp.tell())
@@ -116,6 +114,7 @@ def getData(filepath):
         pw_total=int("%d"%struct.unpack('>I',fp.read(4)))
         print("total",pw_total,"passwords")
         while 1:
+            print('*'*50)
             pd=pwTextData()
             try:
                 #print(fp.tell())
@@ -126,9 +125,6 @@ def getData(filepath):
                 ## so ,pass -_-!
                 if fstruct==6:break 
                 
-                #while fstruct not in [2,1,3]:
-                    #print("fstruct error,pos",fp.tell(),hex(fstruct))
-                    #fstruct=int("%d"%struct.unpack('>I',fp.read(4)))
                 while fstruct<=24 or fstruct>=256 :
                     print(">> head parse pass",fstruct)
                     ## the start of area flag is "\x58"
@@ -139,46 +135,30 @@ def getData(filepath):
                 max_count=6
                 spec=0
                 #print("start")
-
+                                
                 l=fstruct
+                # ID
                 pd.key=getBlockData(fp,l)
-                
-                #l=int("%d"%struct.unpack('>I',fp.read(4)))
-                #while l<=24 or l>=255:
-                #    l=int("%d"%struct.unpack('>I',fp.read(4)))
-                #pd.timestamp=getBlockData(fp,l)
-                
-                #l=int("%d"%struct.unpack('>I',fp.read(4)))
-                #while l<=24 or l>=255:
-                #    l=int("%d"%struct.unpack('>I',fp.read(4)))
-                #pd.onurl=getBlockData(fp,l)
-
-                before=fp.tell()
+                # TIMESTAMP
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.timestamp=getBlockData(fp,l)
+                # URL
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.onurl=getBlockData(fp,l)
+                # unknow url
                 print(">>","other domain info")
-                while 1:
-                    l=int("%d"%struct.unpack('>I',fp.read(4)))
-                    print("other domain parse:",l)
-#                    if l==2 :break
-                    if l==0 :continue
-                    if (l>0 and l<24) or l>=65535:
-                        n=fp.read(20)
-                        #print("ord(2)",l,"pass",fp.tell())
-                        break
-                    if l>=512 and l<65535:
-                        #print("ord(l)",l,"break",fp.tell())
-                        break
-                    #if l<8 and l>3:max_count-=1;continue
-                    #elif l==1 or l==2 or l==3 or l>=32767:print("ord(l)",l,"break",fp.tell());break
-                    if l>=24 and l<512 :
-                        pd.other.append(getBlockData(fp,l))
-                
-                ## if 00 00 00 02 , it is a new block
-#                if l==2:continue
-                #pd.fldsinfo_len=24
-                #print("len pd.other len pd.other len pd.other:",len(pd.other))
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.action=getBlockData(fp,l)
+                # unknow url2
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.unknow_url2=getBlockData(fp,l)
+                # unknow url3
+                l=int("%d"%struct.unpack('>I',fp.read(4)))
+                pd.domain=getBlockData(fp,l)
+
+                pd.fldsinfo=fp.read(24)
 
                 pd.flds_count=int("%d"%struct.unpack('>I',fp.read(4)))
-                #print("pd.flds_count",pd.flds_count,fp.tell(),"read fileds........................",fp.tell())
                 print(">> with",pd.flds_count,"fields")
                 for i in xrange(pd.flds_count):
                     tag_id=fp.read(1)
@@ -195,7 +175,6 @@ def getData(filepath):
                     pd.flds.append((tag_id,d[:]))
                 ret.append(pd)
                 #print("end")
-                print('*'*50)
                 #print("stack here****",fp.tell())
             except:
                 print("except,pos:",fp.tell())
@@ -214,15 +193,16 @@ def DecryptPwTextData(tdata):
             return d
         else:
             return GetPrintable(DecryptBlock(d.key,d.data))
-            
     try:
-        
         tdata.key=Decrypt(tdata.key)
-
         tdata.timestamp=Decrypt(tdata.timestamp)
         tdata.onurl=Decrypt(tdata.onurl)
-        #tdata.unknow_url=Decrypt(tdata.unknow_url)
-        #tdata.domain=Decrypt(tdata.domain)
+        if tdata.action:
+            tdata.action=Decrypt(tdata.action)
+        if tdata.unknow_url2:
+            tdata.unknow_url2=Decrypt(tdata.unknow_url2)
+        if tdata.domain:
+            tdata.domain=Decrypt(tdata.domain)
         if tdata.other:
             for dt in tdata.other:
                 tdata.other2.append(Decrypt(dt))
@@ -267,12 +247,13 @@ def PrintTextData(pwdatas):
     print("*"*50)
     for pwdata in pwdatas:
         DecryptPwTextData(pwdata)
-        print(pwdata.key)
-        print(pwdata.timestamp)
-        print(pwdata.onurl)
-        #print(pwdata.unknow_url)
-        #print(pwdata.domain)
-        #print("other2_len",len(pwdata.other))
+        print("ID:\t",pwdata.key)
+        print("TIMESTAMP:\t",pwdata.timestamp)
+        print("ONURL:\t",pwdata.onurl)
+        print("ACTION:\t",pwdata.action)
+        print("UNKNOW:\t",pwdata.unknow_url2)
+        print("DOMAIN:\t",pwdata.domain)
+        print("fields_info(24):\t",pwdata.fldsinfo.encode('hex'))
         if pwdata.other:
             print("otherUrlInfo:",pwdata.other2)
         
@@ -282,4 +263,6 @@ def PrintTextData(pwdatas):
         #print(pwdata.flds) # flds is encrypt data [(tag_id,[pwRawData,pwRawData,pwRawData]),]
         for i in pwdata.fields:
             print('\t',i) # fields is readable text data [(type,text),]
+        print("")
         print("*"*50)
+        print("")
