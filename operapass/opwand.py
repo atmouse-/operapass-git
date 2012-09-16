@@ -31,6 +31,14 @@ class pwRawData():
         
 class pwTextData():
     def __init__(self):
+        # record type:
+        # type 0 for old opera wand.dat password data
+        # type 1
+        # type 2 for opera 9+ webform password data
+        # type 5 for opera:mail
+        # type 10 for opera:account
+        self.record_type=0
+        
         self.key=""
         self.timestamp=""
         self.onurl=""
@@ -219,7 +227,7 @@ def getData(filepath):
                 
                 ## tagid 6 is the opera:encrypto info,i didn't resolve the data here
                 ## so ,pass -_-!
-                if fstruct!=2 and fstruct!=0:
+                if fstruct!=2 and fstruct!=0 and fstruct!=1:
                     print(">> record type:",fstruct)
                     print(">> something like opera:account")
                     print(">> maybe some didn't show, don't worry, other record will support soon! :-)")
