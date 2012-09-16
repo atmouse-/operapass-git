@@ -89,17 +89,18 @@ def getSize(fp):
 
 def getBlockData(fp,length):
     if length==0:
+        print("block_size: 0; pass; pos:",fp.tell())
         return None
     #print("length:",length,fp.tell())
     block=pwRawData()
     block.size=length
-    print("block_size:",block.size,"pos:",fp.tell())
+    print("block_size:",block.size,"pos:",fp.tell(),end=";")
     size_key=getSize(fp)
     if size_key!=8 :
         print("!!!!warnings,size_key",size_key,"pos:",fp.tell())
     block.key=struct.unpack('>%ss' % size_key, fp.read(size_key))[0]
     size_data=getSize(fp)
-    print("size_data",size_data,"pos:",fp.tell())
+    print("size_data",size_data,"pos:",fp.tell(),end=";")
     block.data=struct.unpack('>%ss' % size_data, fp.read(size_data))[0]
     print(length,size_key,size_data,GetPrintable(DecryptBlock(block.key,block.data)))
     #print("end pos:::::",fp.tell())
@@ -218,20 +219,24 @@ def getData(filepath):
                 
                 ## tagid 6 is the opera:encrypto info,i didn't resolve the data here
                 ## so ,pass -_-!
-                if fstruct==6:break 
+                if fstruct!=2 and fstruct!=0:
+                    print(">> record type:",fstruct)
+                    print(">> something like opera:account")
+                    print(">> maybe some didn't show, don't worry, other record will support soon! :-)")
+                    break 
                 
-                while fstruct<=24 or fstruct>=256 :
-                    print(">> head parse pass",fstruct)
+                if fstruct<0 or fstruct>256 :
+                    print(">> unknow record type, exit!! type:",fstruct)
+                    sys.exit()
+                    #print(">> head parse pass",fstruct)
                     ## the start of area flag is "\x58"
                     ##print("fstruct error,pos",fp.tell(),hex(fstruct))
-                    fstruct=getSize(fp)
-
-                domain_info_count=1
-                max_count=6
-                spec=0
-                #print("start")
+                    #fstruct=getSize(fp)
+                
+                print(">> record type:",fstruct)
+                #print(">> record type2:",getSize(fp))
                                 
-                l=fstruct
+                l=getSize(fp)
                 # ID
                 pd.key=getBlockData(fp,l)
                 # TIMESTAMP
@@ -242,21 +247,22 @@ def getData(filepath):
                 pd.onurl=getBlockData(fp,l)
                 
                 # unknow url
-                print(">>","other domain info")
+                #print(">>","other domain info")
                 l=getSize(fp)
                 pd.action=getBlockData(fp,l)
-                if head_info["version"] > 8:
-                    # unknow url2
-                    l=getSize(fp)
-                    pd.unknow_url2=getBlockData(fp,l)
-                    # unknow url3
-                    l=getSize(fp)
-                    pd.domain=getBlockData(fp,l)
+                
+                #if head_info["version"] > 8:
+                # unknow url2
+                l=getSize(fp)
+                pd.unknow_url2=getBlockData(fp,l)
+                # domain
+                l=getSize(fp)
+                pd.domain=getBlockData(fp,l)
 
                 pd.fldsinfo=fp.read(24)
 
                 pd.flds_count=getSize(fp)
-                print(">> with",pd.flds_count,"fields")
+                print(">> with",pd.flds_count,"fields; pos:",fp.tell())
                 if pd.flds_count:
                     pd.flds=read_fields(fp,pd.flds_count)
 
