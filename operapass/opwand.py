@@ -45,10 +45,8 @@ class pwTextData():
         self.action="" 
         self.unknow_url2="" # unuse
         self.domain=""
-        self.other=[] # other urlinfo,didn't decrypto
-        self.other2=[] # other urlinfo text 
     
-        self.fldsinfo_len=20
+        self.fldsinfo_len=24
         self.fldsinfo=""
         self.flds_count=0
         self.flds=[] # flds is encrypt data [(tag_id,[pwRawData,pwRawData]),]
@@ -92,31 +90,35 @@ def GetPrintable(text):
     printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c'
     return ''.join([ b for b in text if b in printable ])
 
+def Decrypt(d):
+    if type(d) == type("") or d == None:
+        return d
+    else:
+        return GetPrintable(DecryptBlock(d.key,d.data))
+
 def getSize(fp):
+    """ get 4 bytes """
     return int("%d"%struct.unpack('>I',fp.read(4)))
 
 def getBlockData(fp,length):
-    if length==0:
-        print("block_size: 0; pass; pos:",fp.tell())
+    if not length:
+        #print("block_size: 0; pass; pos:", fp.tell())
         return None
-    #print("length:",length,fp.tell())
-    block=pwRawData()
-    block.size=length
-    print("block_size:",block.size,"pos:",fp.tell(),end=";")
-    size_key=getSize(fp)
-    if size_key!=8 :
-        print("!!!!warnings,size_key",size_key,"pos:",fp.tell())
-    block.key=struct.unpack('>%ss' % size_key, fp.read(size_key))[0]
-    size_data=getSize(fp)
-    print("size_data",size_data,"pos:",fp.tell(),end=";")
-    block.data=struct.unpack('>%ss' % size_data, fp.read(size_data))[0]
-    print(length,size_key,size_data,GetPrintable(DecryptBlock(block.key,block.data)))
-    #print("end pos:::::",fp.tell())
+    block = pwRawData()
+    block.size = length
+    #print("block_size:",block.size,"pos:",fp.tell(),end=";")
+    size_key = getSize(fp)
+    if size_key != 8:
+        print("!!!!warnings,size_key", size_key, "pos:", fp.tell())
+    block.key = struct.unpack('>%ss' % size_key, fp.read(size_key))[0]
+    size_data = getSize(fp)
+    #print("size_data",size_data,"pos:",fp.tell(),end=";")
+    block.data = struct.unpack('>%ss' % size_data, fp.read(size_data))[0]
+    #print(length,size_key,size_data,GetPrintable(DecryptBlock(block.key,block.data)))
     return block
         
 def getData(filepath):
     # head
-
     ret=[]
     
     fsize=os.stat(filepath).st_size
@@ -154,7 +156,8 @@ def getData(filepath):
         """
         
         # unknow head info here!
-        head_info={}
+        head_info={"version":0,
+                "pw_count":0}
         start_pos=fp.read().find("\x00\x00\x00\x38\x00\x00\x00\x08\xF9\xBF\x8B\xFD\xA5\x45\x15\x22\x00\x00\x00\x28\x99\x20\x8B\xC6\x37\xC7\x9F\x8C\xB4\x33\x34\xDC\xC3\x8F\xCF\x34\x20\x19\x23\x85\x3E\x74\x99\x76\x57\x3A\x1A\x4A\xF2\xBE\xA5\x6E\x94\x5A\xA8\xA6\x08\x82\xD3\xFB")
 
         """
@@ -169,7 +172,7 @@ def getData(filepath):
         
         # unkown
         for un in range(12):
-            print("circle:",un)
+            #print("circle:",un)
             l=getSize(fp)
             if l:
                 getBlockData(fp,l)
@@ -195,15 +198,15 @@ def getData(filepath):
     def read_fields(fp,count):
         if not count:
             return None
-        ret=[]
+        ret = []
         for i in xrange(count):
-            tag_id=fp.read(1)
+            tag_id = fp.read(1)
             #print("tag_id",ord(tag_id))
-            d=[]
+            d = []
             for j in xrange(3):
                 ## each tag_id with 3 block, including an empty block
-                l=getSize(fp)
-                if l<9 :
+                l = getSize(fp)
+                if l<9:
                     #print("ord(l)",l,fp.tell())
                     continue
                 d.append(getBlockData(fp,l))
@@ -211,112 +214,115 @@ def getData(filepath):
             ret.append((tag_id,d[:]))
         return ret
         
-    with open(filepath,"rb") as fp:
-        #print("start 0")
-        head_info=parse_head(fp)
+    with open(filepath, "rb") as fp:
+        head_info = parse_head(fp)
 
-        pw_total=head_info["pw_count"]
-        print("total",pw_total,"passwords")
-        while 1:
-            print('*'*50)
-            pd=pwTextData()
+        pw_count = head_info["pw_count"]
+        print(">> total", pw_count, "passwords")
+        while pw_count:
+            pw_count -= 1
+            #print('*'*50)
+            pd = pwTextData()
             try:
-                #print(fp.tell())
-                fstruct=getSize(fp)
-                #print(hex(fstruct))
+                utype = getSize(fp)
+                #print(">> record type:", utype)
                 
-                ## tagid 6 is the opera:encrypto info,i didn't resolve the data here
-                ## so ,pass -_-!
-                if fstruct!=2 and fstruct!=0 and fstruct!=1:
-                    print(">> record type:",fstruct)
-                    print(">> something like opera:account")
-                    print(">> maybe some didn't show, don't worry, other record will support soon! :-)")
-                    break 
-                
-                if fstruct<0 or fstruct>256 :
-                    print(">> unknow record type, exit!! type:",fstruct)
+                if utype<0 or utype>256 :
+                    print(">> unknow record type, exit!! type:", utype)
                     sys.exit()
                     #print(">> head parse pass",fstruct)
                     ## the start of area flag is "\x58"
                     ##print("fstruct error,pos",fp.tell(),hex(fstruct))
                     #fstruct=getSize(fp)
                 
-                print(">> record type:",fstruct)
-                #print(">> record type2:",getSize(fp))
-                                
-                l=getSize(fp)
+                ## tagid 6 is the opera:encrypto info,i didn't resolve the data here
+                ## so ,pass -_-!
+                if utype!=2 and utype!=0 and utype!=1:
+                    print(">> record type:", utype, "pos:", fp.tell())
+                    print(">> something like opera:account")
+                    print(">> maybe some didn't show, don't worry, other record will support soon! :-)")
+                    break 
+                    
                 # ID
-                pd.key=getBlockData(fp,l)
+                l = getSize(fp)
+                pd.key = getBlockData(fp,l)
                 # TIMESTAMP
-                l=getSize(fp)
-                pd.timestamp=getBlockData(fp,l)
-                # URL
-                l=getSize(fp)
-                pd.onurl=getBlockData(fp,l)
+                l = getSize(fp)
+                pd.timestamp = getBlockData(fp,l)
+                # URL on decypto
+                l = getSize(fp)
+                pd.onurl = Decrypt(getBlockData(fp,l))
                 
-                # unknow url
-                #print(">>","other domain info")
-                l=getSize(fp)
-                pd.action=getBlockData(fp,l)
-                
-                #if head_info["version"] > 8:
+                # action
+                l = getSize(fp)
+                pd.action = getBlockData(fp,l)
                 # unknow url2
-                l=getSize(fp)
-                pd.unknow_url2=getBlockData(fp,l)
+                l = getSize(fp)
+                pd.unknow_url2 = getBlockData(fp,l)
                 # domain
-                l=getSize(fp)
-                pd.domain=getBlockData(fp,l)
+                l = getSize(fp)
+                pd.domain = getBlockData(fp,l)
 
-                pd.fldsinfo=fp.read(24)
+                pd.fldsinfo = fp.read(pd.fldsinfo_len)
 
-                pd.flds_count=getSize(fp)
-                print(">> with",pd.flds_count,"fields; pos:",fp.tell())
+                pd.flds_count = getSize(fp)
+                #print(">> with", pd.flds_count, "fields; pos:", fp.tell())
                 if pd.flds_count:
-                    pd.flds=read_fields(fp,pd.flds_count)
+                    pd.flds = read_fields(fp,pd.flds_count)
 
                 ret.append(pd)
-                #print("end")
-                #print("stack here****",fp.tell())
             except:
-                print("except,pos:",fp.tell())
+                print("except,pos:", fp.tell())
                 break
-
+        
+        ## read opera:account
+        ocount = getSize(fp)
+        print(">> opera records counts:", ocount)
+        while ocount:
+            ocount -= 1
+            pd = pwTextData()
+            utype = getSize(fp)
+            #print("record type:",utype)
+            l = getSize(fp)
+            pd.key = getBlockData(fp,l)
+            l = getSize(fp)
+            pd.timestamp = getBlockData(fp,l)
+            l = getSize(fp)
+            pd.onurl = Decrypt(getBlockData(fp,l))
+            l = getSize(fp)
+            acc = getBlockData(fp,l)
+            l = getSize(fp)
+            pwd = getBlockData(fp,l)
+            pd.flds.append(('\xff', [acc, pwd]))
+            ret.append(pd)
     #print("len ret:",len(ret))
     
     if ret:
         return ret
     print("read file error!")
-        
-def DecryptPwTextData(tdata):
-    ## tdata is an instants of pwTextData
-    def Decrypt(d):
-        if type(d) == type("") or d == None:
-            return d
-        else:
-            return GetPrintable(DecryptBlock(d.key,d.data))
-    try:
-        tdata.key=Decrypt(tdata.key)
-        tdata.timestamp=Decrypt(tdata.timestamp)
-        tdata.onurl=Decrypt(tdata.onurl)
-        if tdata.action:
-            tdata.action=Decrypt(tdata.action)
-        if tdata.unknow_url2:
-            tdata.unknow_url2=Decrypt(tdata.unknow_url2)
-        if tdata.domain:
-            tdata.domain=Decrypt(tdata.domain)
-        if tdata.other:
-            for dt in tdata.other:
-                tdata.other2.append(Decrypt(dt))
 
-        
-        #tdata.fldsinfo_len=24
+def DecryptPwTextData(tdata, key=0,
+                    timestamp=0, action=0,
+                    unknow_url2=0, domain=0):
+    ## tdata is an instants of pwTextData
+    try:
+        if key:
+            tdata.key = Decrypt(tdata.key)
+        if timestamp:
+            tdata.timestamp = Decrypt(tdata.timestamp)
+        if tdata.action:
+            tdata.action = Decrypt(tdata.action)
+        if tdata.unknow_url2:
+            tdata.unknow_url2 = Decrypt(tdata.unknow_url2)
+        if tdata.domain:
+            tdata.domain = Decrypt(tdata.domain)
+
+        #tdata.fldsinfo_len = 24
         #tdata.fldsinfo
         #tdata.flds_count
-
         for tag_id,pwrawdatas in tdata.flds:
-            #print(struct.unpack("s",tag_id)[0])
-            d_temp=[]
-            d_temp.append(struct.unpack("s",tag_id)[0])
+            d_temp = []
+            d_temp.append(struct.unpack("s", tag_id)[0])
             for pwrdata in pwrawdatas:
                 d_temp.append(Decrypt(pwrdata))
             tdata.fields.append(d_temp[:])
@@ -344,26 +350,26 @@ def GetPasswordfile():
 
     return pwfile
 
-def PrintTextData(pwdatas):
+def PrintTextData(pwdatas, pfilter):
     print("*"*50)
     for pwdata in pwdatas:
+        if pfilter not in pwdata.onurl:
+            continue
         DecryptPwTextData(pwdata)
-        print("ID:\t",pwdata.key)
-        print("TIMESTAMP:\t",pwdata.timestamp)
-        print("ONURL:\t",pwdata.onurl)
-        print("ACTION:\t",pwdata.action)
-        print("UNKNOW:\t",pwdata.unknow_url2)
-        print("DOMAIN:\t",pwdata.domain)
-        print("fields_info(24):\t",pwdata.fldsinfo.encode('hex'))
-        if pwdata.other:
-            print("otherUrlInfo:",pwdata.other2)
+        #print("ID:\t",pwdata.key)
+        #print("TIMESTAMP:\t",pwdata.timestamp)
+        print("ONURL:\t", pwdata.onurl)
+        #print("ACTION:\t",pwdata.action)
+        #print("UNKNOW:\t",pwdata.unknow_url2)
+        #print("DOMAIN:\t",pwdata.domain)
+        #print("fields_info(24):\t",pwdata.fldsinfo.encode('hex'))
         
         #print(pwdata.fldsinfo_len)
         #print(pwdata.fldsinfo)
-        print("data_fields_count",pwdata.flds_count)
+        #print("data_fields_count",pwdata.flds_count)
         #print(pwdata.flds) # flds is encrypt data [(tag_id,[pwRawData,pwRawData,pwRawData]),]
         for i in pwdata.fields:
+            if i[0] == '\x00':
+                continue
             print('\t',i) # fields is readable text data [(type,text),]
-        print("")
         print("*"*50)
-        print("")

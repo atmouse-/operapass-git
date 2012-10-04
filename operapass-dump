@@ -8,16 +8,21 @@
 # TODO: Make this a more generic export utilty, exporting to files other
 # programs can import (i.e. CSV and the like).
 #
-# Usage: $0 [FILE]
+# Usage: $0 [FILE] [filter_string]
+# Example: python .\operapass-dump "D:\Program Files\Opera\profile\wand.dat" "operachina"
 
 from __future__ import print_function
 import sys
 from operapass import opwand
 
 if __name__ == "__main__":
+    try:
+        pfilter=sys.argv[2]
+    except:
+        pfilter=""
     pwfile = opwand.GetPasswordfile()
     passwords=opwand.getData(pwfile)
-    opwand.PrintTextData(passwords)
+    opwand.PrintTextData(passwords, pfilter)
 
     print("total of",len(passwords),"password areas")
     print("wand.dat file:",pwfile)
