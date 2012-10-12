@@ -14,6 +14,7 @@
 from __future__ import print_function
 import sys
 from operapass import opwand
+from pprint import pprint
 
 if __name__ == "__main__":
     try:
@@ -21,8 +22,10 @@ if __name__ == "__main__":
     except:
         pfilter=""
     pwfile = opwand.GetPasswordfile()
-    passwords=opwand.getData(pwfile)
-    opwand.PrintTextData(passwords, pfilter)
+    passwords = opwand.getData(pwfile)
+    passwords = opwand.DecryptPwTextDatas(passwords)
+    rlines = opwand.PrintTextData(passwords, pfilter)
+    pprint(rlines)
 
     print("total of",len(passwords),"password areas")
     print("wand.dat file:",pwfile)
