@@ -17,13 +17,15 @@ class MyFrame(wx.Frame):
         filemenu = wx.Menu()
         # wx.ID_ABOUT and wx.ID_EXIT are standard IDs provided by wxWidgets.
         menuitem_open = filemenu.Append(wx.ID_ANY, '&Open', 'Open(wand.dat) ...')
-        menuitem_save = filemenu.Append(wx.ID_ANY, '&Export', 'Export to txt file...')
+        menuitem_save = filemenu.Append(wx.ID_ANY, '&Export txt', 'Export to txt file...')
+        menuitem_csv = filemenu.Append(wx.ID_ANY, '&Export csv', 'Export to csv file that use by lastpass')
         filemenu.AppendSeparator()
         menuitem_about = filemenu.Append(wx.ID_ABOUT, '&About', 'Information about this program')
         menuitem_exit = filemenu.Append(wx.ID_EXIT, 'E&xit', 'Terminate the program')
         # event
         self.Bind(wx.EVT_MENU, self.OnOpen, menuitem_open)
         self.Bind(wx.EVT_MENU, self.OnSave, menuitem_save)
+        self.Bind(wx.EVT_MENU, self.OnSave_csv, menuitem_csv)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuitem_about)
         self.Bind(wx.EVT_MENU, self.OnExit, menuitem_exit)
         # Creating the menubar
@@ -118,6 +120,7 @@ class MyFrame(wx.Frame):
             self.tree.SetItemText(child, f2, 2)
             self.pwdatas.append([txt, f1, f2])
         self.tree.Expand(self.root)
+        self.search_result = self.pwdatas
 
     def Refresh(self):
         self.tree.CollapseAll()
@@ -139,12 +142,37 @@ class MyFrame(wx.Frame):
             self.RecreateTree(self.pwdatas)
             return
         
-        search_result = []
+        self.search_result = []
         for pwdata in self.pwdatas:
             if value in repr(pwdata):
-                search_result.append(pwdata)
-        self.RecreateTree(search_result)
+                self.search_result.append(pwdata)
+        self.RecreateTree(self.search_result)
 
+    def OnSave_csv(self, e):
+        """ file to save """
+        try:
+            #self.OnShow('no file opened, save to...', 'notify')
+            dlg = wx.FileDialog(self, 'save to file', self.dirname,
+                            '', '*.csv', wx.SAVE)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.pwfile = dlg.GetPaths()[0]
+                fw = open(self.pwfile, 'w')
+                flines = []
+                flines.append("name,username,password,url\n")
+                for line in self.search_result:
+                    if '//' not in line[0]:
+                        continue
+                    name = line[0].split("//")[1].split('/')[0]
+                    username = line[1]
+                    password = line[2]
+                    url = line[0]
+                    flines.append(','.join([name,username,password,url])+'\n')
+                fw.writelines(flines)
+                fw.close()
+                print('save OK!')
+            dlg.Destroy()
+        except e:
+            print('save IOexcept')
 
 if __name__ == '__main__':
     app = wx.App(False)
