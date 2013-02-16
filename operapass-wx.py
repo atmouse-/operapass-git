@@ -87,7 +87,7 @@ class MyFrame(wx.Frame):
             self.pwfile = dlg.GetPaths()[0]
             self.passwords = opwand.getData(self.pwfile)
             self.passwords = opwand.DecryptPwTextDatas(self.passwords)
-            print(self.passwords)
+            #print(self.passwords)
             self.OnLoad(self.passwords)
         dlg.Destroy()
 
