@@ -7,7 +7,7 @@ setup(
     name = 'operapass',
     version = '1.2',
     author = 'atmouse',
-    author_email = 'atmouse.cc@gmail.com',
+    author_email = 'xxx@gmail.com',
     url = 'https://github.com/atmouse-',
     scripts = ('operapass-dump',),
     packages = ('operapass',),
